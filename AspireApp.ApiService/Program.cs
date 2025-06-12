@@ -50,6 +50,12 @@ app.MapGet("/weatherforecast", () =>
     return forecast;
 });
 
+app.MapGet("/SecretTesti", () =>
+{
+    var secret = builder.Configuration["SecretTesti"];
+    return secret ?? "No secret found";
+});
+
 app.MapDefaultEndpoints();
 
 app.Run();
