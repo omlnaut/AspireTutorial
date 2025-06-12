@@ -1,3 +1,6 @@
+using System.Net.Http.Headers;
+using AspireApp.ApiService.Services.Github;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add service defaults & Aspire components.
@@ -16,6 +19,13 @@ builder.Services
                 Version = "v1"
             });
         });
+
+builder.Services.AddHttpClient<GitHubService>(client =>
+{
+    client.BaseAddress = new Uri("https://api.github.com/");
+    client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("AspireApp.ApiService", "1.0"));
+    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
+});
 
 var app = builder.Build();
 
@@ -50,10 +60,16 @@ app.MapGet("/weatherforecast", () =>
     return forecast;
 });
 
-app.MapGet("/SecretTesti", () =>
+app.MapGet("/SecretTesti", async (GitHubService gitHubService, IConfiguration config) =>
 {
-    var secret = builder.Configuration["SecretTesti"];
-    return secret ?? "No secret found";
+    var secret = config["gh_key"];
+
+    if (string.IsNullOrEmpty(secret))
+    {
+        return Results.Problem("github key configuration is missing.");
+    }
+
+    return Results.Ok(await gitHubService.GetUserProfileAsync(secret));
 });
 
 app.MapDefaultEndpoints();
